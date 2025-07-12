@@ -1,0 +1,31 @@
+name: Deploy to Cloud Run with Buildpacks
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: swagger-ui-gen
+
+      - name: Deploy to Cloud Run with Buildpacks
+        run: |
+          gcloud run deploy api2project \
+            --source . \
+            --region europe-west1 \
+            --platform managed \
+            --allow-unauthenticated
