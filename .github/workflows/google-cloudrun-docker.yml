@@ -1,9 +1,9 @@
-name: Deploy to Cloud Run
+name: Deploy to Cloud Run with Buildpacks
 
 on:
   push:
     branches:
-      - main
+      - main  # o tu rama de despliegue
 
 permissions:
   contents: read
@@ -11,14 +11,14 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Cloud Run
+    name: Build and Deploy to Cloud Run
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
@@ -28,16 +28,11 @@ jobs:
         with:
           project_id: swagger-ui-gen
 
-      - name: Build and Push container image to Artifact Registry
-        run: |
-          gcloud builds submit \
-            --tag europe-west1-docker.pkg.dev/swagger-ui-gen/api2project/api2project:latest
-
-      - name: Deploy to Cloud Run
+      - name: Deploy to Cloud Run with Buildpacks
         run: |
           gcloud run deploy api2project \
-            --image europe-west1-docker.pkg.dev/swagger-ui-gen/api2project/api2project:latest \
-            --platform managed \
+            --source . \
             --region europe-west1 \
+            --platform managed \
             --allow-unauthenticated \
             --project swagger-ui-gen
