@@ -1,4 +1,4 @@
-name: Deploy to Cloud Run with Buildpacks
+name: "Deploy to Google Cloud Run"
 
 on:
   push:
@@ -10,22 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@master
         with:
           project_id: swagger-ui-gen
+          service_account_key: ${{ secrets.GOOGLE_CREDENTIALS }}
+          export_default_credentials: true
 
-      - name: Deploy to Cloud Run with Buildpacks
-        run: |
-          gcloud run deploy api2project \
-            --source . \
-            --region europe-west1 \
-            --platform managed \
-            --allow-unauthenticated
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: europe-west1-docker.pkg.dev/swagger-ui-gen/api2project/api2project:latest
+          build-args: |
+            HTTP_PORT=8080
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          image: europe-west1-docker.pkg.dev/swagger-ui-gen/api2project/api2project:latest
+          service: api2project
+          region: europe-west1
+          platform: managed
+          allow-unauthenticated: true
+          env_vars: |
+            PYTHON_ENV=production
+            PORT=8080
