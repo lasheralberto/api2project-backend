@@ -18,7 +18,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
-      - name: Set up Google Cloud SDK (optional)
+      - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: swagger-ui-gen
@@ -41,8 +41,6 @@ jobs:
           image: europe-west1-docker.pkg.dev/swagger-ui-gen/api2project/api2project:latest
           service: api2project
           region: europe-west1
-          platform: managed
-          allow-unauthenticated: true
+          flags: '--allow-unauthenticated'
           env_vars: |
             PYTHON_ENV=production
-            PORT=8080
